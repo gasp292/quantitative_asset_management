@@ -1,5 +1,9 @@
 import streamlit as st
 import pandas as pd
+import time
+import json
+import os
+
 # Import local modules
 from quant_b_module.portfolio_manager import PortfolioManager
 from quant_b_module.visualizer import Visualizer
@@ -7,7 +11,16 @@ from quant_b_module.visualizer import Visualizer
 # --- PAGE CONFIGURATION ---
 st.set_page_config(page_title="Quant Dashboard", layout="wide")
 
+# --- CORE FEATURE 5: AUTO-REFRESH (Every 5 minutes = 300s) ---
+if 'last_refresh' not in st.session_state:
+    st.session_state.last_refresh = time.time()
+
+if time.time() - st.session_state.last_refresh > 300:
+    st.session_state.last_refresh = time.time()
+    st.rerun()
+
 st.title("Asset Management Dashboard (CAC 40 Focus)")
+st.caption(f"Last updated: {time.strftime('%H:%M:%S')} (Auto-refreshes every 5 min)")
 
 # --- SIDEBAR: MODULE SELECTION ---
 st.sidebar.header("Navigation")
@@ -27,11 +40,11 @@ elif module == "Quant B (Portfolio)":
     
     # FULL CAC 40 LIST (Yahoo Finance Format)
     cac40_tickers = [
-    "AC.PA", "AI.PA", "AIR.PA", "MT.AS", "CS.PA", "BNP.PA", "EN.PA", "BVI.PA", "CAP.PA", "CA.PA",
-    "ACA.PA", "BN.PA", "DSY.PA", "EDEN.PA", "ENGI.PA", "EL.PA", "ERF.PA", "RMS.PA", "KER.PA", "OR.PA",
-    "LR.PA", "MC.PA", "ML.PA", "ORA.PA", "RI.PA", "PUB.PA", "RNO.PA", "SAF.PA", "SGO.PA", "SAN.PA",
-    "SU.PA", "GLE.PA", "STLAP.PA", "STMPA.PA", "TEP.PA", "HO.PA", "TTE.PA", "URW.AS", "VIE.PA", "DG.PA"
-]
+        "AC.PA", "AI.PA", "AIR.PA", "MT.AS", "CS.PA", "BNP.PA", "EN.PA", "BVI.PA", "CAP.PA", "CA.PA",
+        "ACA.PA", "BN.PA", "DSY.PA", "EDEN.PA", "ENGI.PA", "EL.PA", "ERF.PA", "RMS.PA", "KER.PA", "OR.PA",
+        "LR.PA", "MC.PA", "ML.PA", "ORA.PA", "RI.PA", "PUB.PA", "RNO.PA", "SAF.PA", "SGO.PA", "SAN.PA",
+        "SU.PA", "GLE.PA", "STLAP.PA", "STMPA.PA", "TEP.PA", "HO.PA", "TTE.PA", "URW.AS", "VIE.PA", "DG.PA"
+    ]
 
     # Default selection: LVMH (MC), Total (TTE), Sanofi (SAN), Airbus (AIR)
     default_selection = ['MC.PA', 'TTE.PA', 'SAN.PA', 'AIR.PA']
@@ -83,6 +96,23 @@ elif module == "Quant B (Portfolio)":
                     st.error(f"⚠️ Total weight: {total_weight:.2f}. Must be 1.0")
                 else:
                     st.success("Weights Valid")
+                    
+                    # --- SAVE CONFIGURATION FOR DAILY REPORT ---
+                    # Cette partie sauvegarde tes choix pour le script automatique
+                    config = {
+                        "tickers": tickers,
+                        "weights": weights
+                    }
+                    try:
+                        # On sauvegarde dans le même dossier que app.py
+                        config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "portfolio_config.json")
+                        with open(config_path, "w") as f:
+                            json.dump(config, f, indent=4)
+                        # Petit message discret dans la console pour debug (optionnel)
+                        # print(f"Config saved to {config_path}")
+                    except Exception as e:
+                        print(f"Error saving config: {e}")
+                    # -------------------------------------------
             
             with col2:
                 # 3. Calculations & Visualizations
