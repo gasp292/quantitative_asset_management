@@ -58,10 +58,20 @@ elif module == "Quant B (Portfolio)":
     # --- STRATEGY PARAMETERS (Mandatory for Quant B) ---
     st.sidebar.markdown("---")
     st.sidebar.subheader("Strategy Parameters")
-    enable_rebalancing = st.sidebar.checkbox(
-        "Enable Monthly Rebalancing", 
-        value=False, 
-        help="Strategy: Sell winners and buy losers every month to maintain target weights."
+    
+    # Allocation Rule (New Feature)
+    allocation_mode = st.sidebar.radio(
+        "Allocation Rule", 
+        ["Manual", "Equal Weight"],
+        help="Manual: Use sliders below. Equal Weight: 1/N allocation."
+    )
+    
+    # Rebalancing Frequency (New Feature)
+    rebal_freq = st.sidebar.selectbox(
+        "Rebalancing Frequency",
+        ["None", "Monthly", "Quarterly", "Yearly"],
+        index=1, # Default to Monthly
+        help="How often the portfolio is reset to target weights."
     )
     
     if len(tickers) < 3:
@@ -85,39 +95,44 @@ elif module == "Quant B (Portfolio)":
                 st.write("**Target Weights**")
                 weights = {}
                 
-                # Independent sliders for simplicity
-                for t in tickers:
-                    val = st.slider(f"{t}", 0.0, 1.0, 1.0/len(tickers))
-                    weights[t] = val
+                # Logic to handle Allocation Rules
+                if allocation_mode == "Equal Weight":
+                    equal_w = 1.0 / len(tickers)
+                    st.info(f"Auto-allocated {equal_w:.2%} to each asset.")
+                    for t in tickers:
+                        weights[t] = equal_w
+                else:
+                    # Manual Mode
+                    for t in tickers:
+                        val = st.slider(f"{t}", 0.0, 1.0, 1.0/len(tickers))
+                        weights[t] = val
                 
                 # Check sum
                 total_weight = sum(weights.values())
                 if not (0.99 <= total_weight <= 1.01):
-                    st.error(f"⚠️ Total weight: {total_weight:.2f}. Must be 1.0")
+                    st.error(f"Total weight: {total_weight:.2f}. Must be 1.0")
                 else:
                     st.success("Weights Valid")
                     
                     # --- SAVE CONFIGURATION FOR DAILY REPORT ---
-                    # Cette partie sauvegarde tes choix pour le script automatique
+                    # Save choices for the automated script
                     config = {
                         "tickers": tickers,
                         "weights": weights
                     }
                     try:
-                        # On sauvegarde dans le même dossier que app.py
+                        # Save in the same directory as app.py
                         config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "portfolio_config.json")
                         with open(config_path, "w") as f:
                             json.dump(config, f, indent=4)
-                        # Petit message discret dans la console pour debug (optionnel)
-                        # print(f"Config saved to {config_path}")
                     except Exception as e:
                         print(f"Error saving config: {e}")
                     # -------------------------------------------
             
             with col2:
                 # 3. Calculations & Visualizations
-                # We pass the 'enable_rebalancing' checkbox value to the engine
-                sim_data = pm.simulate_portfolio(weights, rebalance=enable_rebalancing)
+                # We pass the rebalancing frequency to the engine
+                sim_data = pm.simulate_portfolio(weights, rebalance_freq=rebal_freq)
                 
                 if sim_data is not None:
                     # Display Main Chart
@@ -132,7 +147,7 @@ elif module == "Quant B (Portfolio)":
                     m1.metric("Total Return", f"{metrics['Total Return']:.2%}")
                     m2.metric("Volatility", f"{metrics['Volatility (Ann.)']:.2f}")
                     m3.metric("Diversification Gain", f"{metrics['Diversification Effect']:.4f}", delta_color="normal")
-                    m4.metric("Strategy Mode", "Rebalanced" if enable_rebalancing else "Buy & Hold")
+                    m4.metric("Rebalancing", rebal_freq)
 
             # 4. Advanced Analysis
             st.subheader("2. Correlation Analysis")

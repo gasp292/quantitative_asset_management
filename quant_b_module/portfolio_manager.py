@@ -16,20 +16,18 @@ class PortfolioManager:
         if not tickers:
             return None
         
-        # Fetch data using Yahoo Finance
-        # auto_adjust=True handles dividends/splits correctly
         try:
+            # Download adjusted close prices
             df = yf.download(tickers, period=period, auto_adjust=True)['Close']
         except Exception as e:
             print(f"Error fetching data: {e}")
             return None
         
-        # Handle single ticker case (returns Series instead of DataFrame)
+        # Handle single ticker case
         if len(tickers) == 1:
             df = df.to_frame(name=tickers[0])
             
-        # Clean data: Fill weekends/holidays to avoid gaps (NaNs)
-        # Forward fill first (copy Friday to Saturday), then Backward fill
+        # Clean data (Forward fill then Backward fill)
         df = df.ffill().bfill()
         
         self.data = df
@@ -42,24 +40,22 @@ class PortfolioManager:
         if self.data.empty:
             return pd.DataFrame()
         
-        # Calculate daily percentage change
         returns = self.data.pct_change().dropna()
         return returns.corr()
 
-    def simulate_portfolio(self, weights, rebalance=False):
+    def simulate_portfolio(self, weights, rebalance_freq="None"):
         """
-        Calculates portfolio performance.
-        If rebalance=True, weights are reset to target allocation at the start of each month.
+        Calculates portfolio performance with advanced rebalancing options.
+        rebalance_freq: "None", "Monthly", "Quarterly", "Yearly"
         """
         if self.data.empty:
             return None
 
-        # Normalize data to start at 100 (base 100) for comparison
+        # Normalize data to start at 100
         normalized_data = self.data / self.data.iloc[0] * 100
         
-        # STRATEGY 1: BUY AND HOLD (No Rebalancing) 
-        if not rebalance:
-            # Simple weighted sum. Returns run freely.
+        # --- STRATEGY: BUY AND HOLD (No Rebalancing) ---
+        if rebalance_freq == "None" or rebalance_freq is None or rebalance_freq is False:
             portfolio_value = pd.Series(0.0, index=normalized_data.index)
             for ticker, weight in weights.items():
                 if ticker in normalized_data.columns:
@@ -69,15 +65,10 @@ class PortfolioManager:
             result_df['Portfolio'] = portfolio_value
             return result_df
 
-        # STRATEGY 2: MONTHLY REBALANCING 
+        # --- STRATEGY: PERIODIC REBALANCING ---
         else:
-            # We calculate day by day to apply rebalancing logic
             daily_returns = self.data.pct_change().fillna(0)
-            
-            # Start at 100
             portfolio_value = pd.Series(100.0, index=daily_returns.index)
-            
-            # Initial allocation of money (e.g., 25€ in each stock)
             current_positions = {t: 100.0 * w for t, w in weights.items()}
             
             dates = daily_returns.index
@@ -85,13 +76,21 @@ class PortfolioManager:
                 current_date = dates[i]
                 prev_date = dates[i-1]
                 
-                # Check for new month -> TRIGGER REBALANCE
-                if current_date.month != prev_date.month:
+                # Check Rebalancing Trigger
+                should_rebalance = False
+                if rebalance_freq == "Monthly" and current_date.month != prev_date.month:
+                    should_rebalance = True
+                elif rebalance_freq == "Quarterly" and current_date.quarter != prev_date.quarter:
+                    should_rebalance = True
+                elif rebalance_freq == "Yearly" and current_date.year != prev_date.year:
+                    should_rebalance = True
+                
+                # Apply Rebalancing
+                if should_rebalance:
                     total_value = sum(current_positions.values())
-                    # Reset positions to target weights (selling winners, buying losers)
                     current_positions = {t: total_value * w for t, w in weights.items()}
                 
-                # Apply daily return to positions
+                # Apply Daily Performance
                 daily_total = 0
                 for ticker in weights.keys():
                     if ticker in daily_returns.columns:
@@ -111,15 +110,14 @@ class PortfolioManager:
         """
         # 1. Standard Metrics
         ret_port = portfolio_series.pct_change().dropna()
-        if portfolio_series.iloc[0] == 0: 
-            total_return = 0
-        else:
+        if len(portfolio_series) > 0 and portfolio_series.iloc[0] != 0:
             total_return = (portfolio_series.iloc[-1] - portfolio_series.iloc[0]) / portfolio_series.iloc[0]
+        else:
+            total_return = 0
             
-        vol_port = ret_port.std() * np.sqrt(252) # Annualized Volatility
+        vol_port = ret_port.std() * np.sqrt(252)
         
-        # 2. Diversification Effect (The "Free Lunch" of Finance)
-        # Compare "Sum of Weighted Volatilities" vs "Portfolio Volatility"
+        # 2. Diversification Effect
         individual_rets = self.data.pct_change().dropna()
         individual_vols = individual_rets.std() * np.sqrt(252)
         
@@ -128,7 +126,6 @@ class PortfolioManager:
             if ticker in individual_vols.index:
                 weighted_vol_sum += individual_vols[ticker] * weight
         
-        # If result > 0, diversification is working (risk is reduced)
         diversification_benefit = weighted_vol_sum - vol_port
 
         return {
