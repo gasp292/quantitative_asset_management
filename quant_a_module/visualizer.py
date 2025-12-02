@@ -37,8 +37,8 @@ def display_quant_a():
     # Visualization
     if df is not None:
         col1, col2, col3 = st.columns(3)
-        last_price = df['Close'].iloc[-1]
-        prev_price = df['Close'].iloc[-2]
+        last_price = float(df['Close'].iloc[-1])
+        prev_price = float(df['Close'].iloc[-2])
         delta = last_price - prev_price
         
         col1.metric("Current Price", f"${last_price:,.2f}", f"${delta:,.2f}")

@@ -3,14 +3,12 @@
         "MC.PA",
         "TTE.PA",
         "SAN.PA",
-        "AIR.PA",
-        "BNP.PA"
+        "AIR.PA"
     ],
     "weights": {
-        "MC.PA": 0.2,
-        "TTE.PA": 0.2,
-        "SAN.PA": 0.2,
-        "AIR.PA": 0.2,
-        "BNP.PA": 0.2
+        "MC.PA": 0.25,
+        "TTE.PA": 0.25,
+        "SAN.PA": 0.25,
+        "AIR.PA": 0.25
     }
 }

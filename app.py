@@ -7,6 +7,9 @@ import os
 # Import local modules
 from quant_b_module.portfolio_manager import PortfolioManager
 from quant_b_module.visualizer import Visualizer
+# from quant_a_module.asset_analyzer import AssetAnalyzer
+# import quant_a_module.visualizer as VisualizerA
+import quant_a_module.visualizer as QuantA_UI
 
 # --- PAGE CONFIGURATION ---
 st.set_page_config(page_title="Quant Dashboard", layout="wide")
@@ -26,10 +29,9 @@ st.caption(f"Last updated: {time.strftime('%H:%M:%S')} (Auto-refreshes every 5 m
 st.sidebar.header("Navigation")
 module = st.sidebar.radio("Select Module:", ["Quant A (Single Asset)", "Quant B (Portfolio)"], index=1)
 
-# --- QUANT A LOGIC (Placeholder) ---
+# --- QUANT A LOGIC (Active) ---
 if module == "Quant A (Single Asset)":
-    st.info("Quant A module is currently under development by teammate.")
-    st.image("https://placehold.co/600x400?text=Work+In+Progress", caption="Quant A Area")
+    QuantA_UI.display_quant_a()
 
 # --- QUANT B LOGIC (Active) ---
 elif module == "Quant B (Portfolio)":

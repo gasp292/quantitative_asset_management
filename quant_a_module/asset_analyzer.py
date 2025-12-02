@@ -24,7 +24,7 @@ class AssetAnalyzer():
         df = self.data.copy()
 
         if strategy_name == "Buy and Hold":
-            df['Strategy_Returns'] = self.data['Returns']
+            df['Strategy_Returns'] = df['Returns']
 
         elif strategy_name == "Momentum":
             # .rolling(X).mean() compute the mean of the X last days
@@ -35,7 +35,7 @@ class AssetAnalyzer():
             #strategy_return = signal of day n-1 * return of day n 
             df['Strategy_Returns'] = df['Signal'].shift(1) * df['Returns']
 
-        df['Cumulative_strategy'] = (1 + df['Strategy_Returns'].fillna(0)).cumprod() * 100
+        df['Cumulative_Strategy'] = (1 + df['Strategy_Returns'].fillna(0)).cumprod() * 100
         return df
     
     def get_metrics(self,df):
@@ -66,20 +66,20 @@ class AssetAnalyzer():
     
 
 
-# ----------------------------------- Test of AssetAnalyzer Class ---------------------------------------
+# # ----------------------------------- Test of AssetAnalyzer Class ---------------------------------------
 
-Test = AssetAnalyzer('GOOG')
-Test.get_data()
+# Test = AssetAnalyzer('GOOG')
+# Test.get_data()
 
-df_result = Test.run_strategy("Momentum",20,50)
-cols_to_check = ['Close', 'SMA_Short', 'SMA_Long', 'Signal', 'Strategy_Returns']
-print(df_result[cols_to_check].tail(30))
+# df_result = Test.run_strategy("Momentum",20,50)
+# cols_to_check = ['Close', 'SMA_Short', 'SMA_Long', 'Signal', 'Strategy_Returns']
+# print(df_result[cols_to_check].tail(30))
 
-last_signal = df_result['Signal'].iloc[-1]
-print("Signal for today : ", last_signal, "| 1 = Buy, 0 = Sell")
-metrics = Test.get_metrics(Test.run_strategy("Momentum",20,50))
-print("Sharpe Ratio : ",metrics["Sharpe Ratio"]) 
-print("Max Drawndown : ",metrics["Max Drawdown"])
+# last_signal = df_result['Signal'].iloc[-1]
+# print("Signal for today : ", last_signal, "| 1 = Buy, 0 = Sell")
+# metrics = Test.get_metrics(Test.run_strategy("Momentum",20,50))
+# print("Sharpe Ratio : ",metrics["Sharpe Ratio"]) 
+# print("Max Drawndown : ",metrics["Max Drawdown"])
 
 
 
