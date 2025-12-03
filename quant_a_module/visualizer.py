@@ -5,21 +5,66 @@ from .asset_analyzer import AssetAnalyzer
 def display_quant_a():
     """
     Main function to display the Univariate Analysis module (Quant A).
-    Enhanced with interactive Buy/Sell markers and professional layout.
+    Enhanced with Asset Universes selection.
     """
     st.markdown("Univariate Analysis (Quant A)")
     
+    # --- DATA DEFINITIONS (Shared Universes) ---
+    asset_universes = {
+        "Manual Input": {
+            "tickers": [] 
+        },
+        "CAC 40 (France)": {
+            "tickers": [
+                "MC.PA", "TTE.PA", "SAN.PA", "AIR.PA", "OR.PA", "RMS.PA", "KER.PA", "AI.PA", 
+                "BNP.PA", "GLE.PA", "ACA.PA", "CS.PA", "STLA.PA", "RNO.PA", "ML.PA", "ORA.PA",
+                "CAP.PA", "DSY.PA", "STMPA.PA", "ENGI.PA", "EL.PA", "LR.PA", "SU.PA", "VIE.PA", "DG.PA"
+            ]
+        },
+        "S&P 500 (USA)": {
+            "tickers": [
+                "AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "TSLA", "META", "BRK-B", "V", "JNJ",
+                "WMT", "JPM", "PG", "MA", "LLY", "HD", "XOM", "UNH", "CVX", "KO", "PEP"
+            ]
+        },
+        "DAX 40 (Germany)": {
+            "tickers": [
+                "SAP.DE", "SIE.DE", "ALV.DE", "DTE.DE", "AIR.DE", "BMW.DE", "VOW3.DE", "BAS.DE",
+                "IFX.DE", "DHL.DE", "MBG.DE", "MUV2.DE", "ADS.DE", "DB1.DE", "EOAN.DE"
+            ]
+        },
+        "Crypto Top 10": {
+            "tickers": [
+                "BTC-USD", "ETH-USD", "BNB-USD", "SOL-USD", "XRP-USD", "ADA-USD", "DOGE-USD",
+                "AVAX-USD", "TRX-USD", "DOT-USD", "MATIC-USD", "LTC-USD", "LINK-USD"
+            ]
+        }
+    }
+
     # --- 1. SIDEBAR: SETTINGS ---
     with st.sidebar:
         st.header("Settings")
         
-        # Asset Selection
-        ticker = st.text_input("Asset Symbol", value="BTC-USD")
+        # --- NEW ASSET SELECTION LOGIC ---
+        st.subheader("Asset Selection")
+        
+        # 1. Select Market/Universe
+        market = st.selectbox("Market", list(asset_universes.keys()), index=0)
+        
+        # 2. Select or Type Ticker
+        if market == "Manual Input":
+            ticker = st.text_input("Asset Symbol (Yahoo)", value="BTC-USD")
+        else:
+            # Dropdown for single selection
+            ticker = st.selectbox("Select Asset", asset_universes[market]["tickers"])
+        
+        st.markdown("---")
+        
+        # --- Time & Strategy ---
         period = st.selectbox("Time Period", ["6mo", "1y", "2y", "5y", "max"], index=1)
         strategy = st.radio("Strategy", ["Buy and Hold", "Momentum", "RSI Strategy"])
         
         # --- Strategy Parameters ---
-        # Default values
         short_w, long_w = 20, 50
         rsi_w, rsi_buy, rsi_sell = 14, 30, 70
         
@@ -49,7 +94,7 @@ def display_quant_a():
     analyzer = AssetAnalyzer(ticker)
     forecast_df = None
     
-    with st.spinner('Analyzing market data...'):
+    with st.spinner(f'Analyzing {ticker}...'):
         # Get Data & Run Strategy
         analyzer.get_data(period=period)
         df = analyzer.run_strategy(
@@ -97,7 +142,7 @@ def display_quant_a():
         
         fig = go.Figure()
 
-        # 1. Asset Price (Candlestick or Line) - Let's stick to Line for clarity with Dual Axis
+        # 1. Asset Price
         fig.add_trace(go.Scatter(
             x=df.index, y=df['Close'], 
             name='Asset Price',
@@ -110,18 +155,14 @@ def display_quant_a():
             x=df.index, y=df['Cumulative_Strategy'], 
             name='Strategy (Base 100)',
             line=dict(color='#2980b9', width=2),
-            fill='tozeroy', # Fill area below
-            fillcolor='rgba(41, 128, 185, 0.1)', # Light blue fill
+            fill='tozeroy', 
+            fillcolor='rgba(41, 128, 185, 0.1)', 
             yaxis='y2'
         ))
         
         # 3. BUY / SELL MARKERS 
-        # We detect where the signal changed
         if 'Signal' in df.columns:
-            # Calculate signal changes (1 = Buy, -1 = Sell)
             trades = df['Signal'].diff()
-            
-            # Filter buy and sell points
             buys = df[trades == 1]
             sells = df[trades == -1]
             
@@ -150,13 +191,12 @@ def display_quant_a():
                 yaxis='y1'
             ))
 
-        # 5. Professional Layout
+        # 5. Layout
         fig.update_layout(
             height=600,
             xaxis=dict(
                 rangeslider=dict(visible=False),
                 type="date",
-                # Zoom buttons
                 rangeselector=dict(
                     buttons=list([
                         dict(count=1, label="1m", step="month", stepmode="backward"),
