@@ -1,6 +1,6 @@
 import streamlit as st
 import plotly.graph_objects as go
-from asset_analyzer import AssetAnalyzer
+from .asset_analyzer import AssetAnalyzer
 
 def display_quant_a():
     """
@@ -79,7 +79,7 @@ def display_quant_a():
         if show_forecast and forecast_df is not None:
             last_price = df['Close'].iloc[-1]
             pred_price = forecast_df['Forecast'].iloc[-1]
-            trend = (pred_price - last_price) / last_price
+            trend = float((pred_price - last_price) / last_price)
             color = "#2ecc71" if trend > 0 else "#e74c3c" # Green or Red
             
             st.markdown(f"""

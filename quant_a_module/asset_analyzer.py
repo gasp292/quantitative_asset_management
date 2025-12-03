@@ -76,7 +76,7 @@ class AssetAnalyzer():
             # Calculate returns (shifted by 1 day)
             df['Strategy_Returns'] = df['Signal'].shift(1) * df['Returns']
 
-        df['Cumulative_strategy'] = (1 + df['Strategy_Returns'].fillna(0)).cumprod() * 100
+        df['Cumulative_Strategy'] = (1 + df['Strategy_Returns'].fillna(0)).cumprod() * 100
         return df
     
     def get_metrics(self,df):
@@ -174,36 +174,36 @@ class AssetAnalyzer():
 
 # ----------------------------------- Test of AssetAnalyzer Class ---------------------------------------
 
-Test = AssetAnalyzer('GOOG')
-Test.get_data()
+# Test = AssetAnalyzer('GOOG')
+# Test.get_data()
 
-print("--- Test Momentum ---")
-df_res = Test.run_strategy("Momentum", 20, 50)
-print(df_res[['Close', 'Signal']].tail())
+# print("--- Test Momentum ---")
+# df_res = Test.run_strategy("Momentum", 20, 50)
+# print(df_res[['Close', 'Signal']].tail())
 
-print("\n--- Test RSI ---")
-df_rsi = Test.run_strategy("RSI Strategy", rsi_window=14, rsi_buy=30, rsi_sell=70)
-print(df_rsi[['Close', 'RSI', 'Signal']].tail())
+# print("\n--- Test RSI ---")
+# df_rsi = Test.run_strategy("RSI Strategy", rsi_window=14, rsi_buy=30, rsi_sell=70)
+# print(df_rsi[['Close', 'RSI', 'Signal']].tail())
 
-print("\n--- Test Prévision IA (ARIMA) ---")
-try:
-        # On demande une prévision sur 5 jours pour voir si ça marche vite
-        forecast = Test.get_forecast(steps=5)
+# print("\n--- Test Prévision IA (ARIMA) ---")
+# try:
+#         # On demande une prévision sur 5 jours pour voir si ça marche vite
+#         forecast = Test.get_forecast(steps=5)
         
-        if forecast is not None and not forecast.empty:
-            print("✅ Succès ! Voici les prévisions :")
-            print(forecast)
+#         if forecast is not None and not forecast.empty:
+#             print("Succès ! Voici les prévisions :")
+#             print(forecast)
             
-            # Petit check visuel des valeurs
-            last_price = float(Test.data['Close'].values[-1])
-            next_price = float(forecast['Forecast'].values[0])
-            print(f"\nDernier prix connu : {last_price:.2f}")
-            print(f"Prix prévu demain  : {next_price:.2f}")
-        else:
-            print("Erreur : Le modèle a retourné vide.")
+#             # Petit check visuel des valeurs
+#             last_price = float(Test.data['Close'].values[-1])
+#             next_price = float(forecast['Forecast'].values[0])
+#             print(f"\nDernier prix connu : {last_price:.2f}")
+#             print(f"Prix prévu demain  : {next_price:.2f}")
+#         else:
+#             print("Erreur : Le modèle a retourné vide.")
             
-except Exception as e:
-    print(f"Crash du test : {e}")
+# except Exception as e:
+#     print(f"Crash du test : {e}")
 
 
 

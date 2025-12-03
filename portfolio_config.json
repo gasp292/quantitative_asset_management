@@ -1,14 +1,15 @@
 {
     "tickers": [
-        "MC.PA",
-        "TTE.PA",
-        "SAN.PA",
-        "AIR.PA"
+        "BTC-USD",
+        "ETH-USD",
+        "SOL-USD",
+        "BNB-USD"
     ],
     "weights": {
-        "MC.PA": 0.25,
-        "TTE.PA": 0.25,
-        "SAN.PA": 0.25,
-        "AIR.PA": 0.25
-    }
+        "BTC-USD": 0.25,
+        "ETH-USD": 0.25,
+        "SOL-USD": 0.25,
+        "BNB-USD": 0.25
+    },
+    "asset_class": "Crypto Top 10"
 }

@@ -7,9 +7,13 @@ import os
 # Import local modules
 from quant_b_module.portfolio_manager import PortfolioManager
 from quant_b_module.visualizer import Visualizer
-# from quant_a_module.asset_analyzer import AssetAnalyzer
-# import quant_a_module.visualizer as VisualizerA
-import quant_a_module.visualizer as QuantA_UI
+
+# Import Quant A module safely
+try:
+    from quant_a_module.visualizer import display_quant_a
+    QUANT_A_AVAILABLE = True
+except ImportError as e:
+    QUANT_A_AVAILABLE = False
 
 # --- PAGE CONFIGURATION ---
 st.set_page_config(page_title="Quant Dashboard", layout="wide")
@@ -22,53 +26,95 @@ if time.time() - st.session_state.last_refresh > 300:
     st.session_state.last_refresh = time.time()
     st.rerun()
 
-st.title("Asset Management Dashboard (CAC 40 Focus)")
+st.title("Asset Management Dashboard")
 st.caption(f"Last updated: {time.strftime('%H:%M:%S')} (Auto-refreshes every 5 min)")
 
 # --- SIDEBAR: MODULE SELECTION ---
 st.sidebar.header("Navigation")
 module = st.sidebar.radio("Select Module:", ["Quant A (Single Asset)", "Quant B (Portfolio)"], index=1)
 
-# --- QUANT A LOGIC (Active) ---
+# ==========================================
+#        PARTIE QUANT A (SINGLE ASSET)
+# ==========================================
 if module == "Quant A (Single Asset)":
-    QuantA_UI.display_quant_a()
+    if QUANT_A_AVAILABLE:
+        display_quant_a()
+    else:
+        st.error("Quant A module not found. Please ensure the 'quant_a_module' folder exists.")
 
-# --- QUANT B LOGIC (Active) ---
+# ==========================================
+#        PARTIE QUANT B (PORTFOLIO)
+# ==========================================
 elif module == "Quant B (Portfolio)":
-    st.header("CAC 40 Portfolio Optimization")
+    st.header("Multi-Asset Portfolio Optimization")
     
+    # --- DATA DEFINITIONS (ASSET UNIVERSES) ---
+    asset_universes = {
+        "CAC 40 (France)": {
+            "tickers": [
+                "MC.PA", "TTE.PA", "SAN.PA", "AIR.PA", "OR.PA", "RMS.PA", "KER.PA", "AI.PA", 
+                "BNP.PA", "GLE.PA", "ACA.PA", "CS.PA", "STLA.PA", "RNO.PA", "ML.PA", "ORA.PA",
+                "CAP.PA", "DSY.PA", "STMPA.PA", "ENGI.PA", "EL.PA", "LR.PA", "SU.PA", "VIE.PA", "DG.PA"
+            ],
+            "default": ['MC.PA', 'TTE.PA', 'SAN.PA', 'AIR.PA']
+        },
+        "S&P 500 (USA)": {
+            "tickers": [
+                "AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "TSLA", "META", "BRK-B", "V", "JNJ",
+                "WMT", "JPM", "PG", "MA", "LLY", "HD", "XOM", "UNH", "CVX", "KO", "PEP"
+            ],
+            "default": ['AAPL', 'MSFT', 'GOOGL', 'AMZN']
+        },
+        "DAX 40 (Germany)": {
+            "tickers": [
+                "SAP.DE", "SIE.DE", "ALV.DE", "DTE.DE", "AIR.DE", "BMW.DE", "VOW3.DE", "BAS.DE",
+                "IFX.DE", "DHL.DE", "MBG.DE", "MUV2.DE", "ADS.DE", "DB1.DE", "EOAN.DE"
+            ],
+            "default": ['SAP.DE', 'SIE.DE', 'ALV.DE', 'BMW.DE']
+        },
+        "Crypto Top 10": {
+            "tickers": [
+                "BTC-USD", "ETH-USD", "BNB-USD", "SOL-USD", "XRP-USD", "ADA-USD", "DOGE-USD",
+                "AVAX-USD", "TRX-USD", "DOT-USD", "MATIC-USD", "LTC-USD", "LINK-USD"
+            ],
+            "default": ['BTC-USD', 'ETH-USD', 'SOL-USD', 'BNB-USD']
+        }
+    }
+
     # 1. User Inputs
     st.sidebar.subheader("Portfolio Settings")
     
-    # FULL CAC 40 LIST (Yahoo Finance Format)
-    cac40_tickers = [
-        "AC.PA", "AI.PA", "AIR.PA", "MT.AS", "CS.PA", "BNP.PA", "EN.PA", "BVI.PA", "CAP.PA", "CA.PA",
-        "ACA.PA", "BN.PA", "DSY.PA", "EDEN.PA", "ENGI.PA", "EL.PA", "ERF.PA", "RMS.PA", "KER.PA", "OR.PA",
-        "LR.PA", "MC.PA", "ML.PA", "ORA.PA", "RI.PA", "PUB.PA", "RNO.PA", "SAF.PA", "SGO.PA", "SAN.PA",
-        "SU.PA", "GLE.PA", "STLAP.PA", "STMPA.PA", "TEP.PA", "HO.PA", "TTE.PA", "URW.AS", "VIE.PA", "DG.PA"
-    ]
-
-    # Default selection: LVMH (MC), Total (TTE), Sanofi (SAN), Airbus (AIR)
-    default_selection = ['MC.PA', 'TTE.PA', 'SAN.PA', 'AIR.PA']
-    
-    tickers = st.sidebar.multiselect(
-        "Select Assets (CAC 40)", 
-        cac40_tickers, 
-        default=default_selection
+    # A. Select Asset Class
+    selected_class = st.sidebar.selectbox(
+        "1. Select Asset Class",
+        list(asset_universes.keys()),
+        index=0
     )
     
-    # --- STRATEGY PARAMETERS (Mandatory for Quant B) ---
+    # Get tickers and defaults based on selection
+    current_universe = asset_universes[selected_class]
+    available_tickers = current_universe["tickers"]
+    default_tickers = current_universe["default"]
+    
+    # B. Select Specific Assets
+    tickers = st.sidebar.multiselect(
+        f"2. Select Assets ({selected_class})", 
+        available_tickers, 
+        default=default_tickers
+    )
+    
+    # --- STRATEGY PARAMETERS ---
     st.sidebar.markdown("---")
     st.sidebar.subheader("Strategy Parameters")
     
-    # Allocation Rule (New Feature)
+    # Allocation Rule
     allocation_mode = st.sidebar.radio(
         "Allocation Rule", 
         ["Manual", "Equal Weight"],
         help="Manual: Use sliders below. Equal Weight: 1/N allocation."
     )
     
-    # Rebalancing Frequency (New Feature)
+    # Rebalancing Frequency
     rebal_freq = st.sidebar.selectbox(
         "Rebalancing Frequency",
         ["None", "Monthly", "Quarterly", "Yearly"],
@@ -76,6 +122,7 @@ elif module == "Quant B (Portfolio)":
         help="How often the portfolio is reset to target weights."
     )
     
+    # --- MAIN LOGIC ---
     if len(tickers) < 3:
         st.warning("Please select at least 3 assets to analyze diversification effects.")
     else:
@@ -83,13 +130,13 @@ elif module == "Quant B (Portfolio)":
         pm = PortfolioManager()
         
         # Fetch Data
-        with st.spinner('Fetching real-time data from Paris...'):
+        with st.spinner(f'Fetching real-time data for {selected_class}...'):
             data = pm.fetch_data(tickers)
         
         if data is not None and not data.empty:
-            st.success(f"Data loaded for {len(tickers)} stocks.")
+            st.success(f"Data loaded for {len(tickers)} assets.")
             
-            # 2. Weight Allocation
+            # 2. Weight Allocation Area
             st.subheader("1. Strategic Allocation")
             col1, col2 = st.columns([1, 2])
             
@@ -105,35 +152,35 @@ elif module == "Quant B (Portfolio)":
                         weights[t] = equal_w
                 else:
                     # Manual Mode
-                    for t in tickers:
-                        val = st.slider(f"{t}", 0.0, 1.0, 1.0/len(tickers))
+                    total_used = 0.0
+                    for i, t in enumerate(tickers):
+                        # Smart default slider value to sum to 1 approximately
+                        default_val = 1.0 / len(tickers)
+                        val = st.slider(f"{t}", 0.0, 1.0, default_val, key=f"slider_{t}")
                         weights[t] = val
                 
                 # Check sum
                 total_weight = sum(weights.values())
                 if not (0.99 <= total_weight <= 1.01):
-                    st.error(f"Total weight: {total_weight:.2f}. Must be 1.0")
+                    st.error(f"⚠️ Total weight: {total_weight:.2f}. Must be 1.0")
                 else:
                     st.success("Weights Valid")
                     
                     # --- SAVE CONFIGURATION FOR DAILY REPORT ---
-                    # Save choices for the automated script
                     config = {
                         "tickers": tickers,
-                        "weights": weights
+                        "weights": weights,
+                        "asset_class": selected_class
                     }
                     try:
-                        # Save in the same directory as app.py
                         config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "portfolio_config.json")
                         with open(config_path, "w") as f:
                             json.dump(config, f, indent=4)
                     except Exception as e:
                         print(f"Error saving config: {e}")
-                    # -------------------------------------------
             
             with col2:
                 # 3. Calculations & Visualizations
-                # We pass the rebalancing frequency to the engine
                 sim_data = pm.simulate_portfolio(weights, rebalance_freq=rebal_freq)
                 
                 if sim_data is not None:
@@ -141,10 +188,8 @@ elif module == "Quant B (Portfolio)":
                     Visualizer.plot_performance(sim_data)
                     
                     # Metrics
-                    # We pass 'weights' to calculate diversification
                     metrics = pm.get_portfolio_metrics(weights, sim_data['Portfolio'])
                     
-                    # Display Metrics in 4 columns
                     m1, m2, m3, m4 = st.columns(4)
                     m1.metric("Total Return", f"{metrics['Total Return']:.2%}")
                     m2.metric("Volatility", f"{metrics['Volatility (Ann.)']:.2f}")
@@ -157,4 +202,4 @@ elif module == "Quant B (Portfolio)":
             Visualizer.plot_correlation_heatmap(corr_matrix)
             
         else:
-            st.error("Could not fetch data. Check your internet connection.")
+            st.error("Could not fetch data. Check your internet connection or ticker symbols.")
