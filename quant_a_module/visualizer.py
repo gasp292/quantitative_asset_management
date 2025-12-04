@@ -6,21 +6,113 @@ from quant_a_module.asset_analyzer import AssetAnalyzer
 def display_quant_a():
     """
     Main function to display the Univariate Analysis module (Quant A).
-    Enhanced with interactive Buy/Sell markers and professional layout.
+    Enhanced with Asset Universes selection.
     """
     st.markdown("## Univariate Analysis (Quant A)")
     
+    # --- DATA DEFINITIONS (Shared Universes) ---
+    asset_universes = {
+        "Manual Input": {
+            "tickers": [] 
+        },
+        "CAC 40 (France)": {
+            "tickers": [
+                "MC.PA", "TTE.PA", "SAN.PA", "AIR.PA", "OR.PA", "RMS.PA", "KER.PA", "AI.PA", 
+                "BNP.PA", "GLE.PA", "ACA.PA", "CS.PA", "STLA.PA", "RNO.PA", "ML.PA", "ORA.PA",
+                "CAP.PA", "DSY.PA", "STMPA.PA", "ENGI.PA", "EL.PA", "LR.PA", "SU.PA", "VIE.PA", "DG.PA"
+            ]
+        },
+        "S&P 500 (USA)": {
+            "tickers": [
+                "MMM", "AOS", "ABT", "ABBV", "ACN", "ADBE", "AMD", "AES", "AFL", "A", 
+                "APD", "ABNB", "AKAM", "ALB", "ARE", "ALGN", "ALLE", "LNT", "ALL", "GOOGL", 
+                "GOOG", "MO", "AMZN", "AMCR", "AEE", "AEP", "AXP", "AIG", "AMT", "AWK", 
+                "AMP", "AME", "AMGN", "APH", "ADI", "AON", "APA", "APO", "AAPL", "AMAT", 
+                "APP", "APTV", "ACGL", "ADM", "ANET", "AJG", "AIZ", "T", "ATO", "ADSK", 
+                "ADP", "AZO", "AVB", "AVY", "AXON", "BKR", "BALL", "BAC", "BAX", "BDX", 
+                "BRK.B", "BBY", "TECH", "BIIB", "BLK", "BX", "XYZ", "BK", "BA", "BKNG", 
+                "BSX", "BMY", "AVGO", "BR", "BRO", "BF.B", "BLDR", "BG", "BXP", "CHRW", 
+                "CDNS", "CPT", "CPB", "COF", "CAH", "CCL", "CARR", "CAT", "CBOE", "CBRE", 
+                "CDW", "COR", "CNC", "CNP", "CF", "CRL", "SCHW", "CHTR", "CVX", "CMG", 
+                "CB", "CHD", "CI", "CINF", "CTAS", "CSCO", "C", "CFG", "CLX", "CME", 
+                "CMS", "KO", "CTSH", "COIN", "CL", "CMCSA", "CAG", "COP", "ED", "STZ", 
+                "CEG", "COO", "CPRT", "GLW", "CPAY", "CTVA", "CSGP", "COST", "CTRA", "CRWD", 
+                "CCI", "CSX", "CMI", "CVS", "DHR", "DRI", "DDOG", "DVA", "DAY", "DECK", 
+                "DE", "DELL", "DAL", "DVN", "DXCM", "FANG", "DLR", "DG", "DLTR", "D", 
+                "DPZ", "DASH", "DOV", "DOW", "DHI", "DTE", "DUK", "DD", "ETN", "EBAY", 
+                "ECL", "EIX", "EW", "EA", "ELV", "EME", "EMR", "ETR", "EOG", "EPAM", 
+                "EQT", "EFX", "EQIX", "EQR", "ERIE", "ESS", "EL", "EG", "EVRG", "ES", 
+                "EXC", "EXE", "EXPE", "EXPD", "EXR", "XOM", "FFIV", "FDS", "FICO", "FAST", 
+                "FRT", "FDX", "FIS", "FITB", "FSLR", "FE", "FISV", "F", "FTNT", "FTV", 
+                "FOXA", "FOX", "BEN", "FCX", "GRMN", "IT", "GE", "GEHC", "GEV", "GEN", 
+                "GNRC", "GD", "GIS", "GM", "GPC", "GILD", "GPN", "GL", "GDDY", "GS", 
+                "HAL", "HIG", "HAS", "HCA", "DOC", "HSIC", "HSY", "HPE", "HLT", "HOLX", 
+                "HD", "HON", "HRL", "HST", "HWM", "HPQ", "HUBB", "HUM", "HBAN", "HII", 
+                "IBM", "IEX", "IDXX", "ITW", "INCY", "IR", "PODD", "INTC", "IBKR", "ICE", 
+                "IFF", "IP", "INTU", "ISRG", "IVZ", "INVH", "IQV", "IRM", "JBHT", "JBL", 
+                "JKHY", "J", "JNJ", "JCI", "JPM", "K", "KVUE", "KDP", "KEY", "KEYS", 
+                "KMB", "KIM", "KMI", "KKR", "KLAC", "KHC", "KR", "LHX", "LH", "LRCX", 
+                "LW", "LVS", "LDOS", "LEN", "LII", "LLY", "LIN", "LYV", "LKQ", "LMT", 
+                "L", "LOW", "LULU", "LYB", "MTB", "MPC", "MAR", "MMC", "MLM", "MAS", 
+                "MA", "MTCH", "MKC", "MCD", "MCK", "MDT", "MRK", "META", "MET", "MTD", 
+                "MGM", "MCHP", "MU", "MSFT", "MAA", "MRNA", "MHK", "MOH", "TAP", "MDLZ", 
+                "MPWR", "MNST", "MCO", "MS", "MOS", "MSI", "MSCI", "NDAQ", "NTAP", "NFLX", 
+                "NEM", "NWSA", "NWS", "NEE", "NKE", "NI", "NDSN", "NSC", "NTRS", "NOC", 
+                "NCLH", "NRG", "NUE", "NVDA", "NVR", "NXPI", "ORLY", "OXY", "ODFL", "OMC", 
+                "ON", "OKE", "ORCL", "OTIS", "PCAR", "PKG", "PLTR", "PANW", "PSKY", "PH", 
+                "PAYX", "PAYC", "PYPL", "PNR", "PEP", "PFE", "PCG", "PM", "PSX", "PNW", 
+                "PNC", "POOL", "PPG", "PPL", "PFG", "PG", "PGR", "PLD", "PRU", "PEG", 
+                "PTC", "PSA", "PHM", "PWR", "QCOM", "DGX", "Q", "RL", "RJF", "RTX", 
+                "O", "REG", "REGN", "RF", "RSG", "RMD", "RVTY", "HOOD", "ROK", "ROL", 
+                "ROP", "ROST", "RCL", "SPGI", "CRM", "SNDK", "SBAC", "SLB", "STX", "SRE", 
+                "NOW", "SHW", "SPG", "SWKS", "SJM", "SW", "SNA", "SOLS", "SOLV", "SO", 
+                "LUV", "SWK", "SBUX", "STT", "STLD", "STE", "SYK", "SMCI", "SYF", "SNPS", 
+                "SYY", "TMUS", "TROW", "TTWO", "TPR", "TRGP", "TGT", "TEL", "TDY", "TER", 
+                "TSLA", "TXN", "TPL", "TXT", "TMO", "TJX", "TKO", "TTD", "TSCO", "TT", 
+                "TDG", "TRV", "TRMB", "TFC", "TYL", "TSN", "USB", "UBER", "UDR", "ULTA", 
+                "UNP", "UAL", "UPS", "URI", "UNH", "UHS", "VLO", "VTR", "VLTO", "VRSN", 
+                "VRSK", "VZ", "VRTX", "VTRS", "VICI", "V", "VST", "VMC", "WRB", "GWW", 
+                "WAB", "WMT", "DIS", "WBD", "WM", "WAT", "WEC", "WFC", "WELL", "WST", 
+                "WDC", "WY", "WSM", "WMB", "WTW", "WDAY", "WYNN", "XEL", "XYL", "YUM", 
+                "ZBRA", "ZBH", "ZTS"
+            ]
+        },
+        "DAX 40 (Germany)": {
+            "tickers": [
+                "SAP.DE", "SIE.DE", "ALV.DE", "DTE.DE", "AIR.DE", "BMW.DE", "VOW3.DE", "BAS.DE",
+                "IFX.DE", "DHL.DE", "MBG.DE", "MUV2.DE", "ADS.DE", "DB1.DE", "EOAN.DE"
+            ]
+        },
+        "Crypto Top 10": {
+            "tickers": [
+                "BTC-USD", "ETH-USD", "BNB-USD", "SOL-USD", "XRP-USD", "ADA-USD", "DOGE-USD",
+                "AVAX-USD", "TRX-USD", "DOT-USD", "MATIC-USD", "LTC-USD", "LINK-USD"
+            ]
+        }
+    }
+
     # --- 1. SIDEBAR: SETTINGS ---
     with st.sidebar:
         st.header("Settings")
         
-        # Asset Selection
-        ticker = st.text_input("Asset Symbol", value="BTC-USD")
+        # --- ASSET SELECTION ---
+        st.subheader("Asset Selection")
         
-        # Period Selection
-        period = st.selectbox("Time Period", ["6mo", "1y", "2y", "5y", "max"], index=1)
+        # 1. Select Market/Universe
+        market = st.selectbox("Market", list(asset_universes.keys()), index=0)
         
-        # Strategy Selection
+        # 2. Select or Type Ticker
+        if market == "Manual Input":
+            ticker = st.text_input("Asset Symbol (Yahoo)", value="BTC-USD")
+        else:
+            # Dropdown for single selection
+            ticker = st.selectbox("Select Asset", asset_universes[market]["tickers"])
+        
+        st.markdown("---")
+        
+        # --- Time & Strategy ---
+        # Added '1mo' as requested
+        period = st.selectbox("Time Period", ["1mo", "6mo", "1y", "2y", "5y", "max"], index=2)
         strategy = st.radio("Strategy", ["Buy and Hold", "Momentum", "RSI Strategy"])
         
         # --- Strategy Parameters ---
@@ -47,7 +139,7 @@ def display_quant_a():
     # --- 2. EXECUTION (BACKEND) ---
     analyzer = AssetAnalyzer(ticker)
     
-    with st.spinner('Analyzing market data...'):
+    with st.spinner(f'Analyzing {ticker}...'):
         # Get Data & Run Strategy
         analyzer.get_data(period=period)
         df = analyzer.run_strategy(
@@ -132,20 +224,12 @@ def display_quant_a():
                     yaxis='y1'
                 ))
 
-        # 4. Professional Layout
+        # 4. Professional Layout (Without Zoom Selector)
         fig.update_layout(
             height=600,
             xaxis=dict(
                 type="date",
-                rangeselector=dict(
-                    buttons=list([
-                        dict(count=1, label="1m", step="month", stepmode="backward"),
-                        dict(count=6, label="6m", step="month", stepmode="backward"),
-                        dict(count=1, label="YTD", step="year", stepmode="todate"),
-                        dict(count=1, label="1y", step="year", stepmode="backward"),
-                        dict(step="all")
-                    ])
-                )
+                # Zoom buttons removed as requested
             ),
             yaxis=dict(title="Asset Price ($)", side="left", showgrid=False),
             yaxis2=dict(
