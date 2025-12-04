@@ -20,13 +20,17 @@ class Visualizer:
             title="Portfolio vs Individual Assets (Rebased to 100)",
             labels={"value": "Normalized Price (Base 100)", "variable": "Asset"}
         )
-        
-        # Highlight the 'Portfolio' line to make it stand out
-        fig.update_traces(line=dict(width=1)) # Thin lines for assets
-        fig.update_traces(selector=dict(name='Portfolio'), line=dict(width=4, color='white')) # Thick line for portfolio
-        
+        try:
+            theme = st.get_option("theme.base")
+        except:
+            theme = 'dark'
+        fig.update_traces(line=dict(width=1)) 
+        fig.update_traces(
+            selector=dict(name='Portfolio'), 
+            line=dict(width=4) 
+        )
         st.plotly_chart(fig, use_container_width=True)
-
+        
     @staticmethod
     def plot_correlation_heatmap(corr_matrix):
         """

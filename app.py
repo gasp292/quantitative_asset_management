@@ -52,30 +52,52 @@ elif module == "Quant B (Portfolio)":
     asset_universes = {
         "CAC 40 (France)": {
             "tickers": [
-                "MC.PA", "TTE.PA", "SAN.PA", "AIR.PA", "OR.PA", "RMS.PA", "KER.PA", "AI.PA", 
-                "BNP.PA", "GLE.PA", "ACA.PA", "CS.PA", "STLA.PA", "RNO.PA", "ML.PA", "ORA.PA",
-                "CAP.PA", "DSY.PA", "STMPA.PA", "ENGI.PA", "EL.PA", "LR.PA", "SU.PA", "VIE.PA", "DG.PA"
+                "AC.PA", "ACA.PA", "AI.PA", "AIR.PA", "ALO.PA", "ATO.PA", "BNP.PA", "BN.PA", 
+                "CA.PA", "CAP.PA", "CS.PA", "DG.PA", "DSY.PA", "EDEN.PA", "ENGI.PA", "EL.PA", 
+                "ERF.PA", "GLE.PA", "HO.PA", "KER.PA", "LR.PA", "MC.PA", "ML.PA", "ORA.PA", 
+                "OR.PA", "PUB.PA", "RNO.PA", "RMS.PA", "SAF.PA", "SGO.PA", "SAN.PA", "SU.PA", 
+                "STLA.PA", "STM.PA", "TEP.PA", "TTE.PA", "URW.AS", "VIE.PA", "VIV.PA", "WLN.PA"
             ],
             "default": ['MC.PA', 'TTE.PA', 'SAN.PA', 'AIR.PA']
         },
-        "S&P 500 (USA)": {
-            "tickers": [
-                "AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "TSLA", "META", "BRK-B", "V", "JNJ",
-                "WMT", "JPM", "PG", "MA", "LLY", "HD", "XOM", "UNH", "CVX", "KO", "PEP"
-            ],
-            "default": ['AAPL', 'MSFT', 'GOOGL', 'AMZN']
-        },
         "DAX 40 (Germany)": {
             "tickers": [
-                "SAP.DE", "SIE.DE", "ALV.DE", "DTE.DE", "AIR.DE", "BMW.DE", "VOW3.DE", "BAS.DE",
-                "IFX.DE", "DHL.DE", "MBG.DE", "MUV2.DE", "ADS.DE", "DB1.DE", "EOAN.DE"
+                "ADS.DE", "AIR.DE", "ALV.DE", "BAS.DE", "BAYN.DE", "BEI.DE", "BMW.DE", "BNR.DE", 
+                "CBK.DE", "CON.DE", "1COV.DE", "DTG.DE", "DBK.DE", "DB1.DE", "DHL.DE", "DTE.DE", 
+                "EOAN.DE", "FRE.DE", "HNR1.DE", "HEI.DE", "HEN3.DE", "IFX.DE", "LIN.DE", "MBG.DE", 
+                "MRK.DE", "MTX.DE", "MUV2.DE", "PAH3.DE", "PUM.DE", "QIA.DE", "RWE.DE", "SAP.DE", 
+                "SRT.DE", "SIE.DE", "SHL.DE", "SY1.DE", "VOW3.DE", "VNA.DE", "ZAL.DE"
             ],
             "default": ['SAP.DE', 'SIE.DE', 'ALV.DE', 'BMW.DE']
         },
-        "Crypto Top 10": {
+        "S&P 500 (USA - Major)": {
+            # Liste étendue des composants majeurs du S&P 500
+            "tickers": [
+                "AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "TSLA", "META", "BRK-B", "UNH", "JNJ", "XOM", 
+                "JPM", "PG", "V", "LLY", "MA", "HD", "CVX", "MRK", "ABBV", "PEP", "KO", "AVGO", "COST", 
+                "PFE", "TMO", "WMT", "CSCO", "BAC", "MCD", "ABT", "CRM", "ACN", "DIS", "LIN", "DHR", 
+                "VZ", "NEE", "TXN", "NKE", "PM", "ADBE", "BMY", "CMCSA", "UPS", "RTX", "HON", "NFLX", 
+                "QCOM", "UNP", "INTC", "IBM", "AMGN", "LOW", "SPGI", "CAT", "GS", "INTU", "GE", "AMD", 
+                "DE", "LMT", "MS", "BA", "ELV", "BLK", "AXP", "MDT", "ADP", "BKNG", "PLD", "GILD", 
+                "AMT", "SYK", "MDLZ", "ISRG", "TJX", "CVS", "SBUX", "MMC", "ADI", "C", "CI", "CHTR", 
+                "MO", "EOG", "BDX", "TMUS", "REGN", "SO", "PGR", "ZTS", "DUK", "BSX", "SLB", "CL", 
+                "ITW", "USB", "NOC", "VRTX", "TGT", "CSX", "PYPL", "AON", "HUM", "APD", "EQIX", "ECL", 
+                "WM", "FCX", "HCA", "MMM", "SHW", "ETN", "FISV", "PNC", "EW", "MAR", "CCI", "NSC", 
+                "OXY", "ICE", "FDX", "TFC", "MCO", "EMR", "ORLY", "VLO", "MPC", "PSA", "ROP", "ADM", 
+                "GM", "GIS", "DG", "MCK", "AEP", "SRE", "GD", "AZO", "KMB", "F", "PEG", "PSX", "MET", 
+                "TRV", "MSI", "AIG", "OKE", "DVN", "JCI", "APH", "HLT", "IDXX", "ROST", "TEL", "COF", 
+                "CTAS", "IQV", "KR", "WMB", "ADSK", "BK", "ALL", "EXC", "PAYX", "PCAR", "D", "KMI", 
+                "YUM", "WFC", "ED", "HPQ", "BKR", "GLW", "OTIS", "EA", "DOW", "PRU", "PPG", "PEG", 
+                "CMI", "GPN", "CTSH", "AFL", "STT", "SYY", "XEL", "EBAY", "WBA", "CARR", "FAST", "APTV",
+                "DAL", "UAL", "AAL", "LUV", "RCL", "CCL", "NCLH", "EXPE", "BKNG", "ABNB", "MAR", "HLT"
+            ],
+            "default": ['AAPL', 'MSFT', 'GOOGL', 'AMZN']
+        },
+        "Crypto Top 20": {
             "tickers": [
                 "BTC-USD", "ETH-USD", "BNB-USD", "SOL-USD", "XRP-USD", "ADA-USD", "DOGE-USD",
-                "AVAX-USD", "TRX-USD", "DOT-USD", "MATIC-USD", "LTC-USD", "LINK-USD"
+                "AVAX-USD", "TRX-USD", "DOT-USD", "MATIC-USD", "LTC-USD", "LINK-USD", "SHIB-USD",
+                "DAI-USD", "UNI-USD", "ATOM-USD", "XMR-USD", "ETC-USD", "BCH-USD", "XLM-USD"
             ],
             "default": ['BTC-USD', 'ETH-USD', 'SOL-USD', 'BNB-USD']
         }
