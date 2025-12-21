@@ -53,8 +53,6 @@ class PortfolioManager:
 
         # Normalize data to start at 100
         normalized_data = self.data / self.data.iloc[0] * 100
-        sum_weights = sum(weights.values())
-        weights = {t: w / sum_weights for t, w in weights.items()}
         
         # --- STRATEGY: BUY AND HOLD (No Rebalancing) ---
         if rebalance_freq == "None" or rebalance_freq is None or rebalance_freq is False:
