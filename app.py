@@ -183,7 +183,7 @@ elif module == "Quant B (Portfolio)":
                 
                 # Check sum
                 total_weight = sum(weights.values())
-                if not (0.99 <= total_weight <= 1.01):
+                if not (0.999 <= total_weight <= 1.001):
                     st.error(f"⚠️ Total weight: {total_weight:.2f}. Must be 1.0")
                 else:
                     st.success("Weights Valid")
