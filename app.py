@@ -12,13 +12,36 @@ from quant_b_module.visualizer import Visualizer
 try:
     from quant_a_module.visualizer import display_quant_a
     QUANT_A_AVAILABLE = True
-except ImportError as e:
+except ImportError:
     QUANT_A_AVAILABLE = False
+
+# --- CONFIGURATION PERSISTENCE HELPERS ---
+CONFIG_FILE = "portfolio_config.json"
+
+def load_config():
+    """Loads the saved configuration from the JSON file if it exists."""
+    config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), CONFIG_FILE)
+    if os.path.exists(config_path):
+        try:
+            with open(config_path, "r") as f:
+                return json.load(f)
+        except Exception:
+            return None
+    return None
+
+def save_config(config_data):
+    """Saves the current configuration to a JSON file."""
+    try:
+        config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), CONFIG_FILE)
+        with open(config_path, "w") as f:
+            json.dump(config_data, f, indent=4)
+    except Exception as e:
+        print(f"Error saving config: {e}")
 
 # --- PAGE CONFIGURATION ---
 st.set_page_config(page_title="Quant Dashboard", layout="wide")
 
-# --- CORE FEATURE 5: AUTO-REFRESH (Every 5 minutes = 300s) ---
+# --- AUTO-REFRESH LOGIC (Every 5 minutes) ---
 if 'last_refresh' not in st.session_state:
     st.session_state.last_refresh = time.time()
 
@@ -33,8 +56,11 @@ st.caption(f"Last updated: {time.strftime('%H:%M:%S')} (Auto-refreshes every 5 m
 st.sidebar.header("Navigation")
 module = st.sidebar.radio("Select Module:", ["Quant A (Single Asset)", "Quant B (Portfolio)"], index=1)
 
+# Load saved configuration at startup
+saved_config = load_config()
+
 # ==========================================
-#        PARTIE QUANT A (SINGLE ASSET)
+#        QUANT A SECTION (SINGLE ASSET)
 # ==========================================
 if module == "Quant A (Single Asset)":
     if QUANT_A_AVAILABLE:
@@ -43,12 +69,12 @@ if module == "Quant A (Single Asset)":
         st.error("Quant A module not found. Please ensure the 'quant_a_module' folder exists.")
 
 # ==========================================
-#        PARTIE QUANT B (PORTFOLIO)
+#        QUANT B SECTION (PORTFOLIO)
 # ==========================================
 elif module == "Quant B (Portfolio)":
     st.header("Multi-Asset Portfolio Optimization")
-    
-    # --- DATA DEFINITIONS (ASSET UNIVERSES) ---
+
+    # --- ASSET UNIVERSES DEFINITION ---
     asset_universes = {
         "CAC 40 (France)": {
             "tickers": [
@@ -71,7 +97,6 @@ elif module == "Quant B (Portfolio)":
             "default": ['SAP.DE', 'SIE.DE', 'ALV.DE', 'BMW.DE']
         },
         "S&P 500 (USA - Major)": {
-            # Liste étendue des composants majeurs du S&P 500
             "tickers": [
                 "AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "TSLA", "META", "BRK-B", "UNH", "JNJ", "XOM", 
                 "JPM", "PG", "V", "LLY", "MA", "HD", "CVX", "MRK", "ABBV", "PEP", "KO", "AVGO", "COST", 
@@ -103,44 +128,52 @@ elif module == "Quant B (Portfolio)":
         }
     }
 
-    # 1. User Inputs
     st.sidebar.subheader("Portfolio Settings")
     
-    # A. Select Asset Class
-    selected_class = st.sidebar.selectbox(
-        "1. Select Asset Class",
-        list(asset_universes.keys()),
-        index=0
+    # 1. Select Asset Classes
+    class_options = list(asset_universes.keys())
+    default_classes = [class_options[0]]
+    if saved_config and "asset_class" in saved_config:
+        default_classes = [c for c in saved_config["asset_class"] if c in class_options]
+
+    selected_classes = st.sidebar.multiselect(
+        "1. Select Asset Classes",
+        class_options,
+        default=default_classes
     )
+
+    available_tickers = []
+    default_tickers = []
+    for cls in selected_classes:
+        available_tickers.extend(asset_universes[cls]["tickers"])
+        default_tickers.extend(asset_universes[cls]["default"])
+    available_tickers = sorted(list(set(available_tickers)))
     
-    # Get tickers and defaults based on selection
-    current_universe = asset_universes[selected_class]
-    available_tickers = current_universe["tickers"]
-    default_tickers = current_universe["default"]
-    
-    # B. Select Specific Assets
+    # 2. Select Specific Assets
+    current_default_tickers = default_tickers
+    if saved_config and "tickers" in saved_config:
+        current_default_tickers = [t for t in saved_config["tickers"] if t in available_tickers]
+
     tickers = st.sidebar.multiselect(
-        f"2. Select Assets ({selected_class})", 
+        "2. Select Assets", 
         available_tickers, 
-        default=default_tickers
+        default=current_default_tickers
     )
     
     # --- STRATEGY PARAMETERS ---
     st.sidebar.markdown("---")
     st.sidebar.subheader("Strategy Parameters")
     
-    # Allocation Rule
     allocation_mode = st.sidebar.radio(
         "Allocation Rule", 
         ["Manual", "Equal Weight"],
         help="Manual: Use sliders below. Equal Weight: 1/N allocation."
     )
     
-    # Rebalancing Frequency
     rebal_freq = st.sidebar.selectbox(
         "Rebalancing Frequency",
         ["None", "Monthly", "Quarterly", "Yearly"],
-        index=1, # Default to Monthly
+        index=1,
         help="How often the portfolio is reset to target weights."
     )
     
@@ -148,17 +181,14 @@ elif module == "Quant B (Portfolio)":
     if len(tickers) < 3:
         st.warning("Please select at least 3 assets to analyze diversification effects.")
     else:
-        # Initialize Manager
         pm = PortfolioManager()
         
-        # Fetch Data
-        with st.spinner(f'Fetching real-time data for {selected_class}...'):
+        with st.spinner(f'Fetching real-time data...'):
             data = pm.fetch_data(tickers)
         
         if data is not None and not data.empty:
             st.success(f"Data loaded for {len(tickers)} assets.")
             
-            # 2. Weight Allocation Area
             st.subheader("1. Strategic Allocation")
             col1, col2 = st.columns([1, 2])
             
@@ -166,62 +196,62 @@ elif module == "Quant B (Portfolio)":
                 st.write("**Target Weights**")
                 weights = {}
                 
-                # Logic to handle Allocation Rules
                 if allocation_mode == "Equal Weight":
                     equal_w = 1.0 / len(tickers)
                     st.info(f"Auto-allocated {equal_w:.2%} to each asset.")
                     for t in tickers:
                         weights[t] = equal_w
                 else:
-                    # Manual Mode
-                    total_used = 0.0
-                    for i, t in enumerate(tickers):
-                        # Smart default slider value to sum to 1 approximately
-                        default_val = 1.0 / len(tickers)
-                        val = st.slider(f"{t}", 0.0, 1.0, default_val, key=f"slider_{t}")
+                    # Sync session state with saved config weights if first load
+                    if saved_config and "weights" in saved_config:
+                        for t, w in saved_config["weights"].items():
+                            if f"slider_{t}" not in st.session_state:
+                                st.session_state[f"slider_{t}"] = w
+
+                    # Reset weights if ticker list changed significantly
+                    if "old_tickers" not in st.session_state or set(st.session_state.old_tickers) != set(tickers):
+                        st.session_state.old_tickers = tickers
+                        # Logic to prevent old sliders from overriding 1/N for new items
+                        for t in tickers:
+                            if f"slider_{t}" not in st.session_state:
+                                st.session_state[f"slider_{t}"] = 1.0 / len(tickers)
+
+                    for t in tickers:
+                        default_val = st.session_state.get(f"slider_{t}", 1.0 / len(tickers))
+                        val = st.slider(f"{t}", 0.0, 1.0, default_val, key=f"slider_{t}", format="%.2f")
                         weights[t] = val
                 
-                # Check sum
                 total_weight = sum(weights.values())
                 if not (0.999 <= total_weight <= 1.001):
                     st.error(f"⚠️ Total weight: {total_weight:.2f}. Must be 1.0")
                 else:
                     st.success("Weights Valid")
                     
-                    # --- SAVE CONFIGURATION FOR DAILY REPORT ---
-                    config = {
+                    # Save current config to JSON
+                    current_config = {
                         "tickers": tickers,
                         "weights": weights,
-                        "asset_class": selected_class
+                        "asset_class": selected_classes
                     }
-                    try:
-                        config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "portfolio_config.json")
-                        with open(config_path, "w") as f:
-                            json.dump(config, f, indent=4)
-                    except Exception as e:
-                        print(f"Error saving config: {e}")
+                    save_config(current_config)
             
             with col2:
-                # 3. Calculations & Visualizations
                 sim_data = pm.simulate_portfolio(weights, rebalance_freq=rebal_freq)
                 
                 if sim_data is not None:
-                    # Display Main Chart
                     Visualizer.plot_performance(sim_data)
                     
-                    # Metrics
                     metrics = pm.get_portfolio_metrics(weights, sim_data['Portfolio'])
                     
                     m1, m2, m3, m4 = st.columns(4)
                     m1.metric("Total Return", f"{metrics['Total Return']:.2%}")
-                    m2.metric("Volatility", f"{metrics['Volatility (Ann.)']:.2f}")
-                    m3.metric("Diversification Gain", f"{metrics['Diversification Effect']:.4f}", delta_color="normal")
+                    m2.metric("Volatility (Ann.)", f"{metrics['Volatility (Ann.)']:.2f}")
+                    m3.metric("Diversification Gain", f"{metrics['Diversification Effect']:.4f}")
                     m4.metric("Rebalancing", rebal_freq)
 
-            # 4. Advanced Analysis
             st.subheader("2. Correlation Analysis")
             corr_matrix = pm.get_correlation_matrix()
             Visualizer.plot_correlation_heatmap(corr_matrix)
             
         else:
-            st.error("Could not fetch data. Check your internet connection or ticker symbols.")
+            st.error("Could not fetch data. Check your connection or tickers.")
