@@ -1,3 +1,14 @@
+"""
+STREAMLIT QUANTITATIVE DASHBOARD
+--------------------------------
+A real-time interface for asset analysis and portfolio optimization.
+Features:
+- Multi-asset class support (Equities, Crypto).
+- Dynamic portfolio weight allocation with auto-normalization.
+- Backtesting simulation with configurable rebalancing.
+- Persistence layer via JSON configuration.
+"""
+
 import streamlit as st
 import pandas as pd
 import time

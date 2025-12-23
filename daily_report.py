@@ -1,3 +1,13 @@
+"""
+DAILY PORTFOLIO PERFORMANCE ENGINE
+----------------------------------
+This script automates the generation of quantitative reports by combining:
+1. Single Asset Analysis (Quant A): High-level metrics for benchmark assets (e.g., BTC).
+2. Portfolio Management (Quant B): Multi-asset simulation and risk attribution.
+
+The results are appended to a persistent log file for historical tracking.
+"""
+
 import datetime
 import os
 import sys
