@@ -4,22 +4,18 @@ import time
 import json
 import os
 
-# Import local modules
 from quant_b_module.portfolio_manager import PortfolioManager
 from quant_b_module.visualizer import Visualizer
 
-# Import Quant A module safely
 try:
     from quant_a_module.visualizer import display_quant_a
     QUANT_A_AVAILABLE = True
 except ImportError:
     QUANT_A_AVAILABLE = False
 
-# --- CONFIGURATION PERSISTENCE HELPERS ---
 CONFIG_FILE = "portfolio_config.json"
 
 def load_config():
-    """Loads the saved configuration from the JSON file if it exists."""
     config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), CONFIG_FILE)
     if os.path.exists(config_path):
         try:
@@ -30,7 +26,6 @@ def load_config():
     return None
 
 def save_config(config_data):
-    """Saves the current configuration to a JSON file."""
     try:
         config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), CONFIG_FILE)
         with open(config_path, "w") as f:
@@ -38,10 +33,8 @@ def save_config(config_data):
     except Exception as e:
         print(f"Error saving config: {e}")
 
-# --- PAGE CONFIGURATION ---
 st.set_page_config(page_title="Quant Dashboard", layout="wide")
 
-# --- AUTO-REFRESH LOGIC (Every 5 minutes) ---
 if 'last_refresh' not in st.session_state:
     st.session_state.last_refresh = time.time()
 
@@ -52,29 +45,20 @@ if time.time() - st.session_state.last_refresh > 300:
 st.title("Asset Management Dashboard")
 st.caption(f"Last updated: {time.strftime('%H:%M:%S')} (Auto-refreshes every 5 min)")
 
-# --- SIDEBAR: MODULE SELECTION ---
 st.sidebar.header("Navigation")
 module = st.sidebar.radio("Select Module:", ["Quant A (Single Asset)", "Quant B (Portfolio)"], index=1)
 
-# Load saved configuration at startup
 saved_config = load_config()
 
-# ==========================================
-#        QUANT A SECTION (SINGLE ASSET)
-# ==========================================
 if module == "Quant A (Single Asset)":
     if QUANT_A_AVAILABLE:
         display_quant_a()
     else:
-        st.error("Quant A module not found. Please ensure the 'quant_a_module' folder exists.")
+        st.error("Quant A module not found.")
 
-# ==========================================
-#        QUANT B SECTION (PORTFOLIO)
-# ==========================================
 elif module == "Quant B (Portfolio)":
     st.header("Multi-Asset Portfolio Optimization")
 
-    # --- ASSET UNIVERSES DEFINITION ---
     asset_universes = {
         "CAC 40 (France)": {
             "tickers": [
@@ -130,7 +114,6 @@ elif module == "Quant B (Portfolio)":
 
     st.sidebar.subheader("Portfolio Settings")
     
-    # 1. Select Asset Classes
     class_options = list(asset_universes.keys())
     default_classes = [class_options[0]]
     if saved_config and "asset_class" in saved_config:
@@ -149,7 +132,6 @@ elif module == "Quant B (Portfolio)":
         default_tickers.extend(asset_universes[cls]["default"])
     available_tickers = sorted(list(set(available_tickers)))
     
-    # 2. Select Specific Assets
     current_default_tickers = default_tickers
     if saved_config and "tickers" in saved_config:
         current_default_tickers = [t for t in saved_config["tickers"] if t in available_tickers]
@@ -160,30 +142,26 @@ elif module == "Quant B (Portfolio)":
         default=current_default_tickers
     )
     
-    # --- STRATEGY PARAMETERS ---
     st.sidebar.markdown("---")
     st.sidebar.subheader("Strategy Parameters")
     
     allocation_mode = st.sidebar.radio(
         "Allocation Rule", 
-        ["Manual", "Equal Weight"],
-        help="Manual: Use sliders below. Equal Weight: 1/N allocation."
+        ["Manual", "Equal Weight"]
     )
     
     rebal_freq = st.sidebar.selectbox(
         "Rebalancing Frequency",
         ["None", "Monthly", "Quarterly", "Yearly"],
-        index=1,
-        help="How often the portfolio is reset to target weights."
+        index=1
     )
     
-    # --- MAIN LOGIC ---
     if len(tickers) < 3:
-        st.warning("Please select at least 3 assets to analyze diversification effects.")
+        st.warning("Please select at least 3 assets.")
     else:
         pm = PortfolioManager()
         
-        with st.spinner(f'Fetching real-time data...'):
+        with st.spinner('Fetching real-time data...'):
             data = pm.fetch_data(tickers)
         
         if data is not None and not data.empty:
@@ -202,45 +180,50 @@ elif module == "Quant B (Portfolio)":
                     for t in tickers:
                         weights[t] = equal_w
                 else:
-                    # Sync session state with saved config weights if first load
-                    if saved_config and "weights" in saved_config:
-                        for t, w in saved_config["weights"].items():
-                            if f"slider_{t}" not in st.session_state:
-                                st.session_state[f"slider_{t}"] = w
+                    # Restore weights from JSON to session state if state is empty
+                    if "manual_weights" not in st.session_state or set(st.session_state.manual_weights.keys()) != set(tickers):
+                        if saved_config and "weights" in saved_config and set(saved_config["weights"].keys()) == set(tickers):
+                            st.session_state.manual_weights = saved_config["weights"]
+                        else:
+                            st.session_state.manual_weights = {t: 1.0/len(tickers) for t in tickers}
+                        
+                        # Pre-seed individual slider session state keys
+                        for t, w in st.session_state.manual_weights.items():
+                            st.session_state[f"slider_{t}"] = float(w)
 
-                    # Reset weights if ticker list changed significantly
-                    if "old_tickers" not in st.session_state or set(st.session_state.old_tickers) != set(tickers):
-                        st.session_state.old_tickers = tickers
-                        # Logic to prevent old sliders from overriding 1/N for new items
-                        for t in tickers:
-                            if f"slider_{t}" not in st.session_state:
-                                st.session_state[f"slider_{t}"] = 1.0 / len(tickers)
-
-                    for t in tickers:
-                        default_val = st.session_state.get(f"slider_{t}", 1.0 / len(tickers))
-                        val = st.slider(f"{t}", 0.0, 1.0, default_val, key=f"slider_{t}", format="%.2f")
-                        weights[t] = val
-                
-                total_weight = sum(weights.values())
-                if not (0.999 <= total_weight <= 1.001):
-                    st.error(f"⚠️ Total weight: {total_weight:.2f}. Must be 1.0")
-                else:
-                    st.success("Weights Valid")
+                    # Calculate total from the current slider states to handle relative normalization
+                    current_raw_values = {t: st.session_state.get(f"slider_{t}", 1.0/len(tickers)) for t in tickers}
+                    total_raw = sum(current_raw_values.values())
                     
-                    # Save current config to JSON
-                    current_config = {
-                        "tickers": tickers,
-                        "weights": weights,
-                        "asset_class": selected_classes
-                    }
-                    save_config(current_config)
+                    # Display sliders with calculated normalized weight in labels
+                    for t in tickers:
+                        norm_w = current_raw_values[t] / total_raw if total_raw > 0 else 1.0/len(tickers)
+                        st.slider(
+                            f"{t} (Allocated: {norm_w:.2%})", 
+                            0.0, 1.0, 
+                            key=f"slider_{t}",
+                            format="%.2f"
+                        )
+                    
+                    # Compute final weights for the backend
+                    final_raw = {t: st.session_state[f"slider_{t}"] for t in tickers}
+                    final_total = sum(final_raw.values())
+                    weights = {t: final_raw[t] / final_total if final_total > 0 else 1.0/len(tickers) for t in tickers}
+                    st.session_state.manual_weights = weights
+
+                # Persistent saving
+                current_config = {
+                    "tickers": tickers,
+                    "weights": weights,
+                    "asset_class": selected_classes
+                }
+                save_config(current_config)
             
             with col2:
                 sim_data = pm.simulate_portfolio(weights, rebalance_freq=rebal_freq)
                 
                 if sim_data is not None:
                     Visualizer.plot_performance(sim_data)
-                    
                     metrics = pm.get_portfolio_metrics(weights, sim_data['Portfolio'])
                     
                     m1, m2, m3, m4 = st.columns(4)
@@ -254,4 +237,4 @@ elif module == "Quant B (Portfolio)":
             Visualizer.plot_correlation_heatmap(corr_matrix)
             
         else:
-            st.error("Could not fetch data. Check your connection or tickers.")
+            st.error("Could not fetch data.")
