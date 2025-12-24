@@ -190,6 +190,9 @@ elif module == "Quant B (Portfolio)":
                     st.info(f"Auto-allocated {equal_w:.2%} to each asset.")
                     for t in tickers:
                         weights[t] = equal_w
+                        # Fetch the latest price for display
+                        price = data[t].iloc[-1]
+                        st.write(f"**{t}**: {equal_w:.2%} (Price: {price:.2f})")
                 else:
                     # Restore weights from JSON to session state if state is empty
                     if "manual_weights" not in st.session_state or set(st.session_state.manual_weights.keys()) != set(tickers):
@@ -209,8 +212,12 @@ elif module == "Quant B (Portfolio)":
                     # Display sliders with calculated normalized weight in labels
                     for t in tickers:
                         norm_w = current_raw_values[t] / total_raw if total_raw > 0 else 1.0/len(tickers)
+                        
+                        # Fetch the latest price for the ticker to show in the slider label
+                        price = data[t].iloc[-1]
+                        
                         st.slider(
-                            f"{t} (Allocated: {norm_w:.2%})", 
+                            f"{t} (Allocated: {norm_w:.2%}) | Price: {price:.2f}", 
                             0.0, 1.0, 
                             key=f"slider_{t}",
                             format="%.2f"
