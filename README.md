@@ -1,5 +1,8 @@
 # Quantitative Asset Management Dashboard
-
+![Python](https://img.shields.io/badge/Python-3.9%2B-blue)
+![Streamlit](https://img.shields.io/badge/Framework-Streamlit-red)
+![Platform](https://img.shields.io/badge/Platform-Linux%20VM-black)
+![License](https://img.shields.io/badge/License-MIT-green)
 ## Project Overview
 
 This project was developed as part of a quantitative research simulation for an asset management company in Paris. The objective is to support fundamental portfolio managers by providing a professional, integrated dashboard for real-time financial analysis and strategy backtesting.
