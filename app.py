@@ -166,6 +166,8 @@ elif module == "Quant B (Portfolio)":
         ["None", "Monthly", "Quarterly", "Yearly"],
         index=1
     )
+
+    years = st.sidebar.slider("History (Years)", min_value=1, max_value=10, value=1)
     
     if len(tickers) < 3:
         st.warning("Please select at least 3 assets.")
@@ -173,7 +175,7 @@ elif module == "Quant B (Portfolio)":
         pm = PortfolioManager()
         
         with st.spinner('Fetching real-time data...'):
-            data = pm.fetch_data(tickers)
+            data = pm.fetch_data(tickers, period=f"{years}y")
         
         if data is not None and not data.empty:
             st.success(f"Data loaded for {len(tickers)} assets.")
